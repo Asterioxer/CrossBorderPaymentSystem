@@ -10,6 +10,8 @@ const {
   buildWallet,
   prettyJSONString,
 } = require("./AppUtil.js");
+const FabricCAServices = require("fabric-ca-client");
+const { buildCAClient, registerAndEnrollUser } = require("./CAUtil.js");
 
 const myChannel = "bankschannel";
 const myChaincodeName = "bank";
@@ -192,6 +194,23 @@ async function createBankWithExchangeRate(
     const walletPath = path.join(__dirname, "wallet/org1");
     const wallet = await buildWallet(Wallets, walletPath);
 
+    const identity = await wallet.get(bankadminID);
+    if (!identity) {
+      console.log(`Identity for bank admin ${bankadminID} not found in wallet. Registering and enrolling...`);
+      const caClient = buildCAClient(FabricCAServices, ccp, "ca.org1.example.com");
+      const mspOrg1 = "Org1MSP";
+      const enrollmentResult = await registerAndEnrollUser(
+        caClient,
+        wallet,
+        mspOrg1,
+        bankadminID,
+        "org1.department1"
+      );
+      if (!enrollmentResult.success) {
+        throw new Error(`Failed to register and enroll bank admin: ${enrollmentResult.error}`);
+      }
+    }
+
     const gateway = new Gateway();
 
     await gateway.connect(ccp, {
@@ -249,7 +268,10 @@ async function loginBank(bankadminID, bankID, password) {
 
     const network = await gateway.getNetwork(myChannel);
     const contract = network.getContract(myChaincodeName);
-    const userPassword = await getPasswordFromBlockchain(bankadminID);
+    console.log("\n--> Evaluate Transaction: query the bank for login");
+    const resultQuery = await contract.evaluateTransaction("QueryBank", bankID);
+    const bankObject = JSON.parse(resultQuery.toString());
+    const userPassword = bankObject.password;
 
     if (password === userPassword) {
       console.log("Şifre doğrulandı");

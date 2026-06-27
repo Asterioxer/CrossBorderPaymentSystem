@@ -1,0 +1,28 @@
+﻿# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Wallet and keys
+wallet/
+*PublicKey
+*PrivateKey
+*.pem
+*.db
+keystore/
+
+# Fabric artifacts and logs
+channel-artifacts/
+log.txt
+cbps-network/organizations/fabric-ca/
+cbps-network/organizations/ordererOrganizations/
+cbps-network/organizations/peerOrganizations/
+bank.tar.gz
+
+# Local installations
+fabric-samples/
+install-fabric.sh
+
+# OS generated
+.DS_Store
+Thumbs.db
